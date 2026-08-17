@@ -1,4 +1,4 @@
-# Feedback Picker — Chrome Extension Design
+# Pinpoint — Chrome Extension Design
 
 **Date:** 2026-08-18
 **Status:** Approved

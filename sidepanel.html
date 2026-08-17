@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Pinpoint</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0;
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #1f2937;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #f3f4f6; background: #111827; }
+  }
+  header {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+  }
+  @media (prefers-color-scheme: dark) {
+    header { border-color: #374151; }
+  }
+  #status {
+    padding: 8px 12px;
+    color: #b91c1c;
+    display: none;
+  }
+  #list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+  }
+  .fbp-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .fbp-item { border-color: #374151; }
+  }
+  .fbp-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .fbp-item-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .fbp-item-delete {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+  .fbp-item-delete:hover { color: #b91c1c; }
+  .fbp-item-text, .fbp-item-comment {
+    margin-top: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .fbp-item-text { color: #6b7280; font-style: italic; }
+  #empty {
+    color: #9ca3af;
+    padding: 12px 0;
+    text-align: center;
+  }
+  footer {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    footer { border-color: #374151; }
+  }
+  button.fbp-action {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+  }
+  #copy-btn { background: #3b82f6; color: #fff; }
+  #clear-btn { background: #e5e7eb; color: #1f2937; }
+  @media (prefers-color-scheme: dark) {
+    #clear-btn { background: #374151; color: #f3f4f6; }
+  }
+  #fallback {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 12px 12px;
+    min-height: 100px;
+  }
+</style>
+</head>
+<body>
+  <header>Pinpoint</header>
+  <div id="status">Can't annotate this page.</div>
+  <div id="list">
+    <div id="empty">No annotations yet. Click the toolbar icon to start picking.</div>
+  </div>
+  <textarea id="fallback" style="display:none" readonly></textarea>
+  <footer>
+    <button id="copy-btn" class="fbp-action">Copy</button>
+    <button id="clear-btn" class="fbp-action">Clear all</button>
+  </footer>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
