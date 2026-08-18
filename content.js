@@ -275,6 +275,15 @@
       }
     });
     popup.addEventListener("click", (e) => e.stopPropagation());
+
+    function onOutsideClick(e) {
+      if (!frozen || !popup || popup.style.display === "none") return;
+      if (popup.contains(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      cancelPopup();
+    }
+    document.addEventListener("click", onOutsideClick, true);
   }
 
   function saveAnnotation() {
