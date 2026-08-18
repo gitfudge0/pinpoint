@@ -1,4 +1,7 @@
 (() => {
+  // Long-lived port so the background can detect the panel closing.
+  chrome.runtime.connect({ name: "sidepanel" });
+
   function applyTheme(theme) {
     if (theme === "light" || theme === "dark") {
       document.documentElement.setAttribute("data-theme", theme);
@@ -29,9 +32,16 @@
   const themeToggleEl = document.getElementById("theme-toggle");
   const themeButtons = Array.from(themeToggleEl.querySelectorAll("button"));
 
+  const gearIcon = settingsBtn.innerHTML;
+  const backIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+
   settingsBtn.addEventListener("click", () => {
     const open = settingsEl.classList.toggle("open");
     settingsBtn.classList.toggle("active", open);
+    document.body.classList.toggle("settings-open", open);
+    settingsBtn.innerHTML = open ? backIcon : gearIcon;
+    settingsBtn.title = open ? "Back" : "Settings";
+    settingsBtn.setAttribute("aria-label", open ? "Back" : "Settings");
   });
 
   themeButtons.forEach((btn) => {

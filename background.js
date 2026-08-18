@@ -44,3 +44,16 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   pickingState.delete(tabId);
 });
+
+// Side panel holds a port open; when it closes, stop picking everywhere.
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "sidepanel") return;
+  port.onDisconnect.addListener(() => {
+    for (const [tabId, picking] of pickingState) {
+      if (!picking) continue;
+      chrome.tabs.sendMessage(tabId, { type: "stop-picking" }).catch(() => {});
+      pickingState.set(tabId, false);
+      chrome.action.setIcon({tabId, path: {16:"icons/icon16.png",32:"icons/icon32.png",48:"icons/icon48.png",128:"icons/icon128.png"}}).catch(()=>{});
+    }
+  });
+});

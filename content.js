@@ -29,6 +29,7 @@
   let overlay = null;
   let label = null;
   let popup = null;
+  let openClickEvent = null; // the click that opened the popup; outside-click must ignore it
   let nextCommentId = 1;
   let nextGroupId = 1;
   let groups = []; // { el, groupId, comments: [{id, comment}], pinEl }
@@ -61,6 +62,21 @@
     return text;
   }
 
+  // Promote an element into the browser top layer so it paints above
+  // <dialog>.showModal()/popover backdrops, which beat any z-index.
+  // Re-shows each time to hop above dialogs opened after us.
+  function topLayer(el) {
+    if (!el || !el.showPopover) return;
+    el.popover = "manual";
+    try { el.hidePopover(); } catch {}
+    try { el.showPopover(); } catch {}
+  }
+
+  function unTopLayer(el) {
+    if (!el || !el.hidePopover) return;
+    try { el.hidePopover(); } catch {}
+  }
+
   function positionOverlay(el) {
     ensureOverlay();
     const rect = el.getBoundingClientRect();
@@ -80,11 +96,16 @@
     if (left + 200 > window.innerWidth) left = Math.max(0, window.innerWidth - 200);
     label.style.top = `${top}px`;
     label.style.left = `${left}px`;
+
+    topLayer(overlay);
+    topLayer(label);
   }
 
   function hideOverlay() {
     if (overlay) overlay.style.display = "none";
     if (label) label.style.display = "none";
+    unTopLayer(overlay);
+    unTopLayer(label);
   }
 
   function onMouseMove(e) {
@@ -157,34 +178,47 @@
     return classes.length ? `${tag}.${classes[0]}` : tag;
   }
 
-  // Walk up from `el` looking for the first non-transparent computed
-  // background-color; return true when that color is dark.
-  function isDarkContext(el) {
-    const candidates = [];
-    for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
-      candidates.push(node);
-    }
-    candidates.push(document.body, document.documentElement);
-    for (const node of candidates) {
-      if (!node) continue;
-      const bg = getComputedStyle(node).backgroundColor || "";
-      const m = bg.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
-      if (!m) continue;
-      const alpha = m[4] === undefined ? 1 : parseFloat(m[4]);
-      if (!(alpha > 0)) continue;
-      const r = parseFloat(m[1]), g = parseFloat(m[2]), b = parseFloat(m[3]);
-      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
-    }
-    return false; // absolute default: white page
+  let currentTheme = "system";
+  const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
+  let isDark = darkMedia.matches;
+
+  function computeIsDark() {
+    return currentTheme === "dark" || (currentTheme === "system" && darkMedia.matches);
   }
+
+  function applyThemeToPopup() {
+    if (popup) popup.classList.toggle("fbp-dark", isDark);
+  }
+
+  chrome.storage.sync.get({ theme: "system" }, (res) => {
+    currentTheme = res.theme;
+    isDark = computeIsDark();
+    applyThemeToPopup();
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes.theme) {
+      currentTheme = changes.theme.newValue;
+      isDark = computeIsDark();
+      applyThemeToPopup();
+    }
+  });
+
+  darkMedia.addEventListener("change", () => {
+    if (currentTheme === "system") {
+      isDark = computeIsDark();
+      applyThemeToPopup();
+    }
+  });
 
   function showPopup(el, group, anchorRect) {
     ensurePopup();
     const rect = el.getBoundingClientRect();
-    popup.classList.toggle("fbp-dark", isDarkContext(el));
+    popup.classList.toggle("fbp-dark", isDark);
     const header = popup.querySelector(".fbp-header");
     if (header) header.textContent = shortLabel(el);
     popup.style.display = "block";
+    topLayer(popup);
     popup.querySelector("textarea").value = "";
 
     const history = popup.querySelector(".fbp-history");
@@ -237,6 +271,7 @@
 
   function hidePopup() {
     if (popup) popup.style.display = "none";
+    unTopLayer(popup);
   }
 
   function ensurePopup() {
@@ -279,6 +314,7 @@
 
     function onOutsideClick(e) {
       if (!frozen || !popup || popup.style.display === "none") return;
+      if (e === openClickEvent) return;
       if (popup.contains(e.target)) return;
       e.preventDefault();
       e.stopPropagation();
@@ -390,6 +426,7 @@
     e.preventDefault();
     e.stopPropagation();
     frozen = hovered || e.target;
+    openClickEvent = e;
     showPopup(frozen, findGroup(frozen));
   }
 

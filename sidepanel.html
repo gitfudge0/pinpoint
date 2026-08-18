@@ -13,34 +13,59 @@
   }
   :root {
     color-scheme: light dark;
-    --bg: #FAF9F5;
+    --bg: #F7F7F8;
     --surface: #FFFFFF;
-    --text: #191919;
-    --text-secondary: #6B6A66;
-    --border: #E8E6DF;
-    --danger: #B91C1C;
-    --accent: #D97757;
-    --accent-hover: #C4633F;
+    --text: #3F4650;
+    --text-strong: #1F2430;
+    --text-secondary: #9AA0AA;
+    --label: #6B7280;
+    --border: #E4E5E9;
+    --rule: #EDEEF1;
+    --hover: #F2F3F5;
+    --input: #FFFFFF;
+    --danger: #DC2626;
+    --accent: #2563EB;
+    --accent-hover: #1D4ED8;
+    --ring: rgba(37, 99, 235, 0.15);
     --on-accent: #FFFFFF;
-    --radius: 8px;
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.08);
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #1F1E1D;
-      --surface: #2A2928;
-      --text: #FAF9F5;
-      --text-secondary: #A8A69F;
-      --border: #3A3937;
-      --danger: #F08C7C;
+      --bg: #191B1F;
+      --surface: #22252A;
+      --text: #E7E9EC;
+      --text-strong: #E7E9EC;
+      --text-secondary: #8C929C;
+      --label: #8C929C;
+      --border: #33373E;
+      --rule: #33373E;
+      --hover: #2A2E34;
+      --input: #191B1F;
+      --danger: #F87171;
+      --ring: rgba(59, 130, 246, 0.25);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #1F1E1D;
-    --surface: #2A2928;
-    --text: #FAF9F5;
-    --text-secondary: #A8A69F;
-    --border: #3A3937;
-    --danger: #F08C7C;
+    --bg: #191B1F;
+    --surface: #22252A;
+    --text: #E7E9EC;
+    --text-strong: #E7E9EC;
+    --text-secondary: #8C929C;
+    --label: #8C929C;
+    --border: #33373E;
+    --rule: #33373E;
+    --hover: #2A2E34;
+    --input: #191B1F;
+    --danger: #F87171;
+    --ring: rgba(59, 130, 246, 0.25);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
   *:focus-visible {
     outline: 2px solid var(--accent);
@@ -48,7 +73,7 @@
   }
   body {
     margin: 0;
-    font: 13px/1.5 "Inter", system-ui, sans-serif;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
     color: var(--text);
     background: var(--bg);
     display: flex;
@@ -56,215 +81,269 @@
     height: 100vh;
   }
   header {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
     font-size: 15px;
     font-weight: 600;
+    color: var(--text-strong);
     letter-spacing: 0.01em;
   }
+  header svg { flex-shrink: 0; }
   #status {
-    padding: 8px 12px;
+    margin: 0 16px 10px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
     color: var(--danger);
+    font-weight: 500;
     display: none;
   }
   #list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 12px;
+    padding: 4px 16px 12px;
   }
   .fbp-item {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: none;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    box-shadow: var(--shadow-sm);
+    padding: 14px;
+    margin-bottom: 10px;
     cursor: pointer;
+    transition: box-shadow 120ms ease, border-color 120ms ease;
+  }
+  .fbp-item:hover {
+    box-shadow: var(--shadow);
   }
   .fbp-item-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
   .fbp-item-label {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
+    color: var(--label);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    padding: 3px 8px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .fbp-item-delete {
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 14px;
+    color: var(--label);
     line-height: 1;
-    padding: 2px 4px;
-    border-radius: var(--radius);
+    padding: 5px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  .fbp-item-delete:hover { color: var(--danger); }
+  .fbp-item-delete:hover { color: var(--danger); background: var(--hover); }
   .fbp-item-text, .fbp-item-comment {
-    margin-top: 4px;
+    margin-top: 10px;
+    font-size: 14px;
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .fbp-item-text { color: var(--text-secondary); font-style: italic; }
+  .fbp-item-text { color: var(--text-secondary); }
+  .fbp-item-comment { color: var(--text); }
   .fbp-subitem-list {
-    margin-top: 4px;
-    padding-left: 10px;
-    border-left: 2px solid var(--border);
+    margin-top: 10px;
+    padding-left: 12px;
+    border-left: 2px solid var(--rule);
   }
   .fbp-subitem {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 8px;
+    margin-top: 6px;
   }
   .fbp-subitem-comment {
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
   }
   .fbp-subitem-delete {
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 11px;
+    color: var(--label);
     line-height: 1;
-    padding: 1px 3px;
-    border-radius: var(--radius);
+    padding: 4px;
+    border-radius: var(--radius-sm);
     flex-shrink: 0;
   }
-  .fbp-subitem-delete:hover { color: var(--danger); }
+  .fbp-subitem-delete:hover { color: var(--danger); background: var(--hover); }
   #empty {
     color: var(--text-secondary);
-    padding: 12px 0;
+    padding: 48px 24px;
     text-align: center;
+    line-height: 1.6;
+  }
+  #empty svg {
+    display: block;
+    margin: 0 auto 12px;
+    color: var(--text-secondary);
   }
   footer {
     display: flex;
     gap: 8px;
-    padding: 10px 12px;
-    border-top: 1px solid var(--border);
+    padding: 12px 16px 16px;
   }
   button.fbp-action {
     flex: 1;
-    padding: 8px;
+    padding: 10px 14px;
     border: 1px solid transparent;
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
   }
   #copy-btn {
     background: var(--accent);
     color: var(--on-accent);
-    border-color: var(--accent);
-    border-radius: var(--radius);
+    border-color: transparent;
   }
   #copy-btn:hover {
     background: var(--accent-hover);
-    border-color: var(--accent-hover);
   }
   #clear-btn {
-    background: transparent;
-    color: var(--text-secondary);
+    background: var(--surface);
+    color: var(--text);
     border-color: var(--border);
   }
   #clear-btn:hover {
+    background: var(--hover);
     color: var(--danger);
-    background: var(--surface);
-    border-color: var(--danger);
   }
   #settings-btn {
     margin-left: auto;
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: var(--label);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
-    border-radius: var(--radius);
+    padding: 6px;
+    border-radius: var(--radius-sm);
   }
   #settings-btn:hover, #settings-btn.active {
     color: var(--text);
-    background: var(--surface);
+    background: var(--hover);
   }
   #settings {
     display: none;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
+    margin: 0 16px 12px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
   }
   #settings.open { display: block; }
+  body.settings-open #status,
+  body.settings-open #list,
+  body.settings-open #fallback,
+  body.settings-open footer { display: none !important; }
+  body.settings-open #settings { display: block; }
   .fbp-settings-label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--label);
+    margin-bottom: 10px;
   }
   .fbp-segmented {
     display: flex;
+    gap: 4px;
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 14px;
   }
   .fbp-segmented button {
     flex: 1;
-    padding: 6px 4px;
-    border: none;
-    background: var(--surface);
-    color: var(--text-secondary);
+    padding: 7px 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--label);
     cursor: pointer;
     font: inherit;
-    font-size: 12px;
-    border-left: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
   }
-  .fbp-segmented button:first-child { border-left: none; }
+  .fbp-segmented button:hover { color: var(--text); background: var(--hover); }
   .fbp-segmented button.active {
-    background: var(--accent);
-    color: var(--on-accent);
+    background: var(--hover);
+    color: var(--text);
+    border-color: var(--border);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
   #coffee-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 8px;
+    padding: 9px 14px;
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    color: var(--text);
     text-decoration: none;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
   }
   #coffee-link:hover {
-    color: var(--text);
-    background: var(--surface);
-    border-color: var(--accent);
+    background: var(--hover);
   }
   #fallback {
     display: block;
-    width: calc(100% - 24px);
+    width: calc(100% - 32px);
     box-sizing: border-box;
-    margin: 0 12px 12px;
+    margin: 0 16px 12px;
     min-height: 100px;
     font: inherit;
-    padding: 8px;
-    background: var(--surface);
+    font-size: 14px;
+    padding: 12px;
+    background: var(--input);
     color: var(--text);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     resize: vertical;
+  }
+  #fallback:focus {
+    outline: none;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
   }
 </style>
 </head>
 <body>
-  <header style="display:flex;align-items:center;gap:6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97757" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="7"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/></svg>Pinpoint
-    <button id="settings-btn" title="Settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <header><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.5"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>Pinpoint
+    <button id="settings-btn" title="Settings" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </header>
   <div id="settings">
     <div class="fbp-settings-label">Theme</div>
@@ -273,11 +352,11 @@
       <button data-theme-value="light" type="button">Light</button>
       <button data-theme-value="dark" type="button">Dark</button>
     </div>
-    <a id="coffee-link" href="https://buymeacoffee.com/gitfudge" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+    <a id="coffee-link" href="https://buymeacoffee.com/gitfudge" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Buy me a coffee</a>
   </div>
   <div id="status">Can't annotate this page.</div>
   <div id="list">
-    <div id="empty">No annotations yet. Click the toolbar icon to start picking.</div>
+    <div id="empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.5"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>No annotations yet. Click the toolbar icon to start picking.</div>
   </div>
   <textarea id="fallback" style="display:none" readonly></textarea>
   <footer>
