@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build extension package
+        run: |
+          chmod +x package.sh
+          ./package.sh
+
+      - name: Verify version matches tag
+        run: |
+          zip_version=$(unzip -p dist/pinpoint-*.zip manifest.json | grep -o '"version": "[^"]*"' | cut -d'"' -f4)
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$zip_version" != "$tag_version" ]; then
+            echo "Version mismatch: manifest.json has $zip_version but tag is $tag_version"
+            exit 1
+          fi
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/pinpoint-*.zip --clobber

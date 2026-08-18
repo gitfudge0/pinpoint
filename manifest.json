@@ -3,7 +3,7 @@
   "name": "Pinpoint",
   "version": "1.0.0",
   "description": "Pinpoint — annotate elements on a page with comments and copy structured markdown feedback.",
-  "permissions": ["sidePanel", "activeTab", "scripting"],
+  "permissions": ["sidePanel", "activeTab", "scripting", "storage"],
   "web_accessible_resources": [{"resources": ["fonts/inter-var.woff2"], "matches": ["<all_urls>"]}],
   "background": {
     "service_worker": "background.js"

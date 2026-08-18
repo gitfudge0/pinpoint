@@ -1,10 +1,47 @@
 (() => {
+  function applyTheme(theme) {
+    if (theme === "light" || theme === "dark") {
+      document.documentElement.setAttribute("data-theme", theme);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  }
+
+  chrome.storage.sync.get({ theme: "system" }, (res) => {
+    applyTheme(res.theme);
+    updateThemeButtons(res.theme);
+  });
+
+  function updateThemeButtons(theme) {
+    themeButtons.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.themeValue === theme);
+    });
+  }
+
   const listEl = document.getElementById("list");
   const emptyEl = document.getElementById("empty");
   const statusEl = document.getElementById("status");
   const copyBtn = document.getElementById("copy-btn");
   const clearBtn = document.getElementById("clear-btn");
   const fallbackEl = document.getElementById("fallback");
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsEl = document.getElementById("settings");
+  const themeToggleEl = document.getElementById("theme-toggle");
+  const themeButtons = Array.from(themeToggleEl.querySelectorAll("button"));
+
+  settingsBtn.addEventListener("click", () => {
+    const open = settingsEl.classList.toggle("open");
+    settingsBtn.classList.toggle("active", open);
+  });
+
+  themeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const theme = btn.dataset.themeValue;
+      applyTheme(theme);
+      updateThemeButtons(theme);
+      chrome.storage.sync.set({ theme });
+    });
+  });
 
   function iconSpan(svg) {
     const span = document.createElement("span");
