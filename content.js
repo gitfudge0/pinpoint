@@ -311,7 +311,7 @@
     renderPinContent(group.pinEl, group);
     positionPin(group);
 
-    cancelPopup();
+    showPopup(frozen, group, group.pinEl.getBoundingClientRect());
   }
 
   function findGroup(el) {
@@ -379,7 +379,7 @@
     e.preventDefault();
     e.stopPropagation();
     frozen = hovered || e.target;
-    showPopup(frozen);
+    showPopup(frozen, findGroup(frozen));
   }
 
   function onKeyDown(e) {
