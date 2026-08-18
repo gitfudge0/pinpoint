@@ -30,7 +30,8 @@
   let label = null;
   let popup = null;
   let nextCommentId = 1;
-  let groups = []; // { el, comments: [{id, comment}], pinEl }
+  let nextGroupId = 1;
+  let groups = []; // { el, groupId, comments: [{id, comment}], pinEl }
   let pinContainer = null;
 
   function ensureOverlay() {
@@ -281,11 +282,20 @@
     const comment = popup.querySelector("textarea").value.trim();
     const { tag, id, classes } = describe(frozen);
     const commentId = nextCommentId++;
+
+    let group = findGroup(frozen);
+    if (!group) {
+      group = { el: frozen, groupId: nextGroupId++, comments: [], pinEl: null };
+      groups.push(group);
+      group.pinEl = createPin(group);
+    }
+
     chrome.runtime
       .sendMessage({
         type: "annotation",
         data: {
           commentId: commentId,
+          groupId: group.groupId,
           selector: selectorFor(frozen),
           tag,
           id,
@@ -297,12 +307,6 @@
       })
       .catch(() => {});
 
-    let group = findGroup(frozen);
-    if (!group) {
-      group = { el: frozen, comments: [], pinEl: null };
-      groups.push(group);
-      group.pinEl = createPin(group);
-    }
     group.comments.push({ id: commentId, comment });
     renderPinContent(group.pinEl, group);
     positionPin(group);
@@ -346,9 +350,7 @@
     const count = group.comments.length;
     const bubbleSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
     let html = bubbleSvg;
-    if (count > 1) {
-      html += `<span class="fbp-pin-badge">${count}</span>`;
-    }
+    html += `<span class="fbp-pin-badge">${count}</span>`;
     pinEl.innerHTML = html;
   }
 
@@ -441,6 +443,13 @@
           renderPinContent(group.pinEl, group);
         }
         break;
+      }
+    } else if (msg && msg.type === "focus-group") {
+      const group = groups.find((g) => g.groupId === msg.groupId);
+      if (group) {
+        group.el.scrollIntoView({ behavior: "smooth", block: "center" });
+        positionOverlay(group.el);
+        setTimeout(() => hideOverlay(), 1000);
       }
     } else if (msg && msg.type === "clear-annotations") {
       for (const group of groups) {

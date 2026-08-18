@@ -69,10 +69,14 @@ with when the CSS path is meaningless (hashed/utility class names).
 ### 1. <button class="btn-primary"> "Save changes"
 - Selector: #settings-form > div.actions > button:nth-child(2)
 - Text: "Save changes"
-- Comment: Make this full-width on mobile and disable while saving
+- Comments:
+  1. Make this full-width on mobile and disable while saving
+  2. Also add a loading spinner
 ```
 
-One `###` block per annotation, in pick order.
+One `###` block per element group, in first-pick order. Each block lists the
+element once (selector, text) followed by a `- Comments:` numbered sub-list
+covering every comment left on that element, even if there's only one.
 
 ## Error handling
 

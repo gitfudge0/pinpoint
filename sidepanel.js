@@ -28,56 +28,86 @@
   clearBtn.appendChild(iconSpan(ICON_TRASH));
   clearBtn.appendChild(document.createTextNode("Clear all"));
 
-  /** @type {Array<{selector:string, tag:string, id:string, classes:string[], textSnippet:string, comment:string, url:string}>} */
-  let annotations = [];
+  /** @type {Array<{groupId:number, selector:string, tag:string, id:string, classes:string[], textSnippet:string, url:string, comments:Array<{commentId:number, comment:string}>}>} */
+  let groups = [];
+
+  function removeComment(group, commentId) {
+    const idx = group.comments.findIndex((c) => c.commentId === commentId);
+    if (idx === -1) return;
+    group.comments.splice(idx, 1);
+    if (group.comments.length === 0) {
+      const gIdx = groups.indexOf(group);
+      if (gIdx !== -1) groups.splice(gIdx, 1);
+    }
+    render();
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (!tab || tab.id == null) return;
+      chrome.tabs.sendMessage(tab.id, { type: "remove-comment", id: commentId }).catch(() => {});
+    });
+  }
+
+  function focusGroup(group) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (!tab || tab.id == null) return;
+      chrome.tabs.sendMessage(tab.id, { type: "focus-group", groupId: group.groupId }).catch(() => {});
+    });
+  }
 
   function render() {
     listEl.querySelectorAll(".fbp-item").forEach((n) => n.remove());
-    emptyEl.style.display = annotations.length ? "none" : "block";
+    emptyEl.style.display = groups.length ? "none" : "block";
 
-    annotations.forEach((a, i) => {
+    groups.forEach((g, i) => {
       const item = document.createElement("div");
       item.className = "fbp-item";
+      item.addEventListener("click", (e) => {
+        if (e.target.closest(".fbp-item-delete") || e.target.closest(".fbp-subitem-delete")) return;
+        focusGroup(g);
+      });
 
       const head = document.createElement("div");
       head.className = "fbp-item-head";
 
       const labelSpan = document.createElement("span");
       labelSpan.className = "fbp-item-label";
-      labelSpan.textContent = `${i + 1}. ${elementLabel(a)}`;
-
-      const delBtn = document.createElement("button");
-      delBtn.className = "fbp-item-delete";
-      delBtn.style.cssText += ";display:inline-flex;align-items:center;justify-content:center;";
-      delBtn.innerHTML = ICON_X;
-      delBtn.addEventListener("click", () => {
-        const removedCommentId = a.commentId;
-        annotations.splice(i, 1);
-        render();
-        if (removedCommentId !== undefined) {
-          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            const tab = tabs && tabs[0];
-            if (!tab || tab.id == null) return;
-            chrome.tabs.sendMessage(tab.id, { type: "remove-comment", id: removedCommentId }).catch(() => {});
-          });
-        }
-      });
+      labelSpan.textContent = `${i + 1}. ${elementLabel(g)}`;
 
       head.appendChild(labelSpan);
-      head.appendChild(delBtn);
       item.appendChild(head);
 
-      if (a.textSnippet) {
+      if (g.textSnippet) {
         const textDiv = document.createElement("div");
         textDiv.className = "fbp-item-text";
-        textDiv.textContent = `"${a.textSnippet}"`;
+        textDiv.textContent = `"${g.textSnippet}"`;
         item.appendChild(textDiv);
       }
 
-      const commentDiv = document.createElement("div");
-      commentDiv.className = "fbp-item-comment";
-      commentDiv.textContent = a.comment;
-      item.appendChild(commentDiv);
+      const subList = document.createElement("div");
+      subList.className = "fbp-subitem-list";
+      g.comments.forEach((c, j) => {
+        const subItem = document.createElement("div");
+        subItem.className = "fbp-subitem";
+
+        const subLabel = document.createElement("span");
+        subLabel.className = "fbp-subitem-comment";
+        subLabel.textContent = `${j + 1}. ${c.comment}`;
+
+        const subDelBtn = document.createElement("button");
+        subDelBtn.className = "fbp-subitem-delete";
+        subDelBtn.style.cssText += ";display:inline-flex;align-items:center;justify-content:center;";
+        subDelBtn.innerHTML = ICON_X;
+        subDelBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          removeComment(g, c.commentId);
+        });
+
+        subItem.appendChild(subLabel);
+        subItem.appendChild(subDelBtn);
+        subList.appendChild(subItem);
+      });
+      item.appendChild(subList);
 
       listEl.appendChild(item);
     });
@@ -98,14 +128,17 @@
   }
 
   function buildMarkdown() {
-    const url = annotations.length ? annotations[0].url : location.href;
+    const url = groups.length ? groups[0].url : location.href;
     const date = new Date().toLocaleDateString("en-CA"); // local YYYY-MM-DD
     let md = `## UI Feedback — ${url} (${date})\n`;
-    annotations.forEach((a, i) => {
-      md += `\n### ${i + 1}. ${markdownItemHead(a)}\n`;
-      md += `- Selector: ${a.selector}\n`;
-      md += `- Text: "${a.textSnippet}"\n`;
-      md += `- Comment: ${a.comment}\n`;
+    groups.forEach((g, i) => {
+      md += `\n### ${i + 1}. ${markdownItemHead(g)}\n`;
+      md += `- Selector: ${g.selector}\n`;
+      md += `- Text: "${g.textSnippet}"\n`;
+      md += `- Comments:\n`;
+      g.comments.forEach((c, j) => {
+        md += `  ${j + 1}. ${c.comment}\n`;
+      });
     });
     return md;
   }
@@ -126,7 +159,7 @@
   });
 
   clearBtn.addEventListener("click", () => {
-    annotations = [];
+    groups = [];
     render();
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs && tabs[0];
@@ -138,7 +171,23 @@
   chrome.runtime.onMessage.addListener((msg) => {
     if (!msg) return;
     if (msg.type === "annotation") {
-      annotations.push(msg.data);
+      const data = msg.data;
+      let group = groups.find((g) => g.groupId === data.groupId);
+      if (group) {
+        group.comments.push({ commentId: data.commentId, comment: data.comment });
+      } else {
+        group = {
+          groupId: data.groupId,
+          selector: data.selector,
+          tag: data.tag,
+          id: data.id,
+          classes: data.classes,
+          textSnippet: data.textSnippet,
+          url: data.url,
+          comments: [{ commentId: data.commentId, comment: data.comment }],
+        };
+        groups.push(group);
+      }
       render();
     } else if (msg.type === "restricted-page") {
       statusEl.style.display = "block";

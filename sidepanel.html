@@ -71,6 +71,7 @@
     box-shadow: none;
     padding: 8px 10px;
     margin-bottom: 8px;
+    cursor: pointer;
   }
   .fbp-item-head {
     display: flex;
@@ -100,6 +101,35 @@
     word-break: break-word;
   }
   .fbp-item-text { color: var(--text-secondary); font-style: italic; }
+  .fbp-subitem-list {
+    margin-top: 4px;
+    padding-left: 10px;
+    border-left: 2px solid var(--border);
+  }
+  .fbp-subitem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .fbp-subitem-comment {
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+  }
+  .fbp-subitem-delete {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: var(--radius);
+    flex-shrink: 0;
+  }
+  .fbp-subitem-delete:hover { color: var(--danger); }
   #empty {
     color: var(--text-secondary);
     padding: 12px 0;
