@@ -10,14 +10,33 @@
     }
   }
 
-  chrome.storage.sync.get({ theme: "system" }, (res) => {
+  let settings = {
+    theme: "system",
+    copyFormat: "markdown",
+    pinColor: "#2563EB",
+    includeSelector: true,
+    includeText: true,
+  };
+
+  chrome.storage.sync.get(settings, (res) => {
+    settings = res;
     applyTheme(res.theme);
     updateThemeButtons(res.theme);
+    updateFormatButtons(res.copyFormat);
+    pinColorEl.value = res.pinColor;
+    includeSelectorEl.checked = res.includeSelector;
+    includeTextEl.checked = res.includeText;
   });
 
   function updateThemeButtons(theme) {
     themeButtons.forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.themeValue === theme);
+    });
+  }
+
+  function updateFormatButtons(format) {
+    formatButtons.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.formatValue === format);
     });
   }
 
@@ -31,6 +50,13 @@
   const settingsEl = document.getElementById("settings");
   const themeToggleEl = document.getElementById("theme-toggle");
   const themeButtons = Array.from(themeToggleEl.querySelectorAll("button"));
+  const formatToggleEl = document.getElementById("format-toggle");
+  const formatButtons = Array.from(formatToggleEl.querySelectorAll("button"));
+  const pinColorEl = document.getElementById("pin-color");
+  const includeSelectorEl = document.getElementById("include-selector");
+  const includeTextEl = document.getElementById("include-text");
+  const versionTextEl = document.getElementById("version-text");
+  versionTextEl.textContent = "Pinpoint v" + chrome.runtime.getManifest().version;
 
   const gearIcon = settingsBtn.innerHTML;
   const backIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
@@ -49,8 +75,33 @@
       const theme = btn.dataset.themeValue;
       applyTheme(theme);
       updateThemeButtons(theme);
+      settings.theme = theme;
       chrome.storage.sync.set({ theme });
     });
+  });
+
+  formatButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const copyFormat = btn.dataset.formatValue;
+      updateFormatButtons(copyFormat);
+      settings.copyFormat = copyFormat;
+      chrome.storage.sync.set({ copyFormat });
+    });
+  });
+
+  pinColorEl.addEventListener("input", () => {
+    settings.pinColor = pinColorEl.value;
+    chrome.storage.sync.set({ pinColor: pinColorEl.value });
+  });
+
+  includeSelectorEl.addEventListener("change", () => {
+    settings.includeSelector = includeSelectorEl.checked;
+    chrome.storage.sync.set({ includeSelector: includeSelectorEl.checked });
+  });
+
+  includeTextEl.addEventListener("change", () => {
+    settings.includeText = includeTextEl.checked;
+    chrome.storage.sync.set({ includeText: includeTextEl.checked });
   });
 
   function iconSpan(svg) {
@@ -171,7 +222,8 @@
     let attrs = "";
     if (a.id) attrs += ` id="${a.id}"`;
     if (a.classes && a.classes.length) attrs += ` class="${a.classes.join(" ")}"`;
-    return `<${a.tag}${attrs}> "${a.textSnippet}"`;
+    const text = settings.includeText ? ` "${a.textSnippet}"` : "";
+    return `<${a.tag}${attrs}>${text}`;
   }
 
   function buildMarkdown() {
@@ -180,8 +232,8 @@
     let md = `## UI Feedback — ${url} (${date})\n`;
     groups.forEach((g, i) => {
       md += `\n### ${i + 1}. ${markdownItemHead(g)}\n`;
-      md += `- Selector: ${g.selector}\n`;
-      md += `- Text: "${g.textSnippet}"\n`;
+      if (settings.includeSelector) md += `- Selector: ${g.selector}\n`;
+      if (settings.includeText) md += `- Text: "${g.textSnippet}"\n`;
       md += `- Comments:\n`;
       g.comments.forEach((c, j) => {
         md += `  ${j + 1}. ${c.comment}\n`;
@@ -190,17 +242,53 @@
     return md;
   }
 
+  function buildPlain() {
+    const url = groups.length ? groups[0].url : location.href;
+    const date = new Date().toLocaleDateString("en-CA");
+    let out = `UI Feedback — ${url} (${date})\n`;
+    groups.forEach((g, i) => {
+      const text = settings.includeText ? ` "${g.textSnippet}"` : "";
+      out += `\n${i + 1}. ${elementLabel(g)}${text}\n`;
+      if (settings.includeSelector) out += `  Selector: ${g.selector}\n`;
+      if (settings.includeText) out += `  Text: "${g.textSnippet}"\n`;
+      out += `  Comments:\n`;
+      g.comments.forEach((c, j) => {
+        out += `    ${j + 1}. ${c.comment}\n`;
+      });
+    });
+    return out;
+  }
+
+  function buildJson() {
+    const url = groups.length ? groups[0].url : location.href;
+    const date = new Date().toLocaleDateString("en-CA");
+    const items = groups.map((g) => {
+      const item = { tag: g.tag, id: g.id, classes: g.classes };
+      if (settings.includeSelector) item.selector = g.selector;
+      if (settings.includeText) item.text = g.textSnippet;
+      item.comments = g.comments.map((c) => c.comment);
+      return item;
+    });
+    return JSON.stringify({ url, date, items }, null, 2);
+  }
+
+  function buildOutput() {
+    if (settings.copyFormat === "json") return buildJson();
+    if (settings.copyFormat === "plain") return buildPlain();
+    return buildMarkdown();
+  }
+
   copyBtn.addEventListener("click", async () => {
-    const md = buildMarkdown();
+    const out = buildOutput();
     try {
-      await navigator.clipboard.writeText(md);
+      await navigator.clipboard.writeText(out);
       fallbackEl.style.display = "none";
       copyLabelNode.textContent = "Copied ✓";
       setTimeout(() => {
         copyLabelNode.textContent = "Copy";
       }, 1500);
     } catch (err) {
-      fallbackEl.value = md;
+      fallbackEl.value = out;
       fallbackEl.style.display = "block";
     }
   });

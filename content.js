@@ -43,6 +43,8 @@
     label.className = "fbp-label";
     document.documentElement.appendChild(overlay);
     document.documentElement.appendChild(label);
+    overlay.style.setProperty("--fbp-accent", pinColor);
+    label.style.setProperty("--fbp-accent", pinColor);
   }
 
   function describe(el) {
@@ -181,6 +183,7 @@
   let currentTheme = "system";
   const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
   let isDark = darkMedia.matches;
+  let pinColor = "#2563EB";
 
   function computeIsDark() {
     return currentTheme === "dark" || (currentTheme === "system" && darkMedia.matches);
@@ -190,10 +193,18 @@
     if (popup) popup.classList.toggle("fbp-dark", isDark);
   }
 
-  chrome.storage.sync.get({ theme: "system" }, (res) => {
+  function applyAccentColor() {
+    for (const el of [overlay, label, popup, pinContainer]) {
+      if (el) el.style.setProperty("--fbp-accent", pinColor);
+    }
+  }
+
+  chrome.storage.sync.get({ theme: "system", pinColor: "#2563EB" }, (res) => {
     currentTheme = res.theme;
     isDark = computeIsDark();
     applyThemeToPopup();
+    pinColor = res.pinColor;
+    applyAccentColor();
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -201,6 +212,10 @@
       currentTheme = changes.theme.newValue;
       isDark = computeIsDark();
       applyThemeToPopup();
+    }
+    if (area === "sync" && changes.pinColor) {
+      pinColor = changes.pinColor.newValue;
+      applyAccentColor();
     }
   });
 
@@ -288,6 +303,7 @@
       </div>
     `;
     document.documentElement.appendChild(popup);
+    popup.style.setProperty("--fbp-accent", pinColor);
 
     popup.querySelector(".fbp-btn-save").addEventListener("click", (e) => {
       e.preventDefault();
@@ -373,6 +389,7 @@
     pinContainer = document.createElement("div");
     pinContainer.className = "fbp-pin-container";
     document.documentElement.appendChild(pinContainer);
+    pinContainer.style.setProperty("--fbp-accent", pinColor);
     return pinContainer;
   }
 

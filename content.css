@@ -16,9 +16,9 @@
   display: none;
   pointer-events: none;
   z-index: 2147483647;
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--fbp-accent, #2563eb);
   outline-offset: -2px;
-  background: rgba(37, 99, 235, 0.08);
+  background: color-mix(in srgb, var(--fbp-accent, #2563eb) 8%, transparent);
   box-sizing: border-box;
   transition: none;
 }
@@ -160,9 +160,9 @@
 }
 
 .fbp-popup .fbp-textarea:focus {
-  border: 2px solid #2563eb;
+  border: 2px solid var(--fbp-accent, #2563eb);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fbp-accent, #2563eb) 15%, transparent);
 }
 
 .fbp-popup .fbp-popup-actions {
@@ -227,8 +227,8 @@
 }
 
 .fbp-popup.fbp-dark .fbp-textarea:focus {
-  border: 2px solid #2563eb;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border: 2px solid var(--fbp-accent, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fbp-accent, #2563eb) 25%, transparent);
 }
 
 .fbp-popup.fbp-dark .fbp-btn-cancel {
@@ -264,7 +264,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--fbp-accent, #2563eb);
   border: 2px solid #ffffff;
   color: #ffffff;
   display: flex;
