@@ -297,6 +297,7 @@
       group = { el: frozen, groupId: nextGroupId++, comments: [], pinEl: null };
       groups.push(group);
       group.pinEl = createPin(group);
+      positionPin(group);
     }
 
     chrome.runtime

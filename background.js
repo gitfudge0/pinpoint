@@ -8,6 +8,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   if (pickingState.get(tab.id)) {
     chrome.tabs.sendMessage(tab.id, { type: "stop-picking" }).catch(() => {});
     pickingState.set(tab.id, false);
+    chrome.action.setIcon({tabId: tab.id, path: {16:"icons/icon16.png",32:"icons/icon32.png",48:"icons/icon48.png",128:"icons/icon128.png"}}).catch(()=>{});
     return;
   }
 
@@ -30,11 +31,13 @@ chrome.action.onClicked.addListener(async (tab) => {
     chrome.runtime.sendMessage({ type: "restricted-page" }).catch(() => {});
   });
   pickingState.set(tab.id, true);
+  chrome.action.setIcon({tabId: tab.id, path: {16:"icons/icon-active16.png",32:"icons/icon-active32.png",48:"icons/icon-active48.png",128:"icons/icon-active128.png"}}).catch(()=>{});
 });
 
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message.type === "stopped-picking" && sender.tab && sender.tab.id != null) {
     pickingState.set(sender.tab.id, false);
+    chrome.action.setIcon({tabId: sender.tab.id, path: {16:"icons/icon16.png",32:"icons/icon32.png",48:"icons/icon48.png",128:"icons/icon128.png"}}).catch(()=>{});
   }
 });
 
