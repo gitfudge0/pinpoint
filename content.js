@@ -6,6 +6,22 @@
   }
   window.__fbpInjected = true;
 
+  function injectFontFace() {
+    if (document.getElementById("__fbp-font-face")) return;
+    const style = document.createElement("style");
+    style.id = "__fbp-font-face";
+    const fontUrl = chrome.runtime.getURL("fonts/inter-var.woff2");
+    style.textContent = `@font-face {
+  font-family: "Inter";
+  src: url("${fontUrl}") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}`;
+    (document.head || document.documentElement).appendChild(style);
+  }
+  injectFontFace();
+
   let picking = false;
   let hovered = null;
   let descentStack = []; // elements walked past while going up, for ArrowDown/scroll-down to return to
@@ -327,7 +343,13 @@
 
   function renderPinContent(pinEl, group) {
     if (!pinEl) return;
-    pinEl.textContent = String(group.comments.length);
+    const count = group.comments.length;
+    const bubbleSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
+    let html = bubbleSvg;
+    if (count > 1) {
+      html += `<span class="fbp-pin-badge">${count}</span>`;
+    }
+    pinEl.innerHTML = html;
   }
 
   function positionPin(group) {

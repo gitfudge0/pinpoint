@@ -6,6 +6,28 @@
   const clearBtn = document.getElementById("clear-btn");
   const fallbackEl = document.getElementById("fallback");
 
+  function iconSpan(svg) {
+    const span = document.createElement("span");
+    span.className = "fbp-icon";
+    span.style.cssText = "display:inline-flex;align-items:center;justify-content:center;flex-shrink:0";
+    span.innerHTML = svg;
+    return span;
+  }
+
+  const ICON_COPY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const ICON_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+  const ICON_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  copyBtn.style.cssText += ";display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+  clearBtn.style.cssText += ";display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+  copyBtn.innerHTML = "";
+  copyBtn.appendChild(iconSpan(ICON_COPY));
+  const copyLabelNode = document.createTextNode("Copy");
+  copyBtn.appendChild(copyLabelNode);
+  clearBtn.innerHTML = "";
+  clearBtn.appendChild(iconSpan(ICON_TRASH));
+  clearBtn.appendChild(document.createTextNode("Clear all"));
+
   /** @type {Array<{selector:string, tag:string, id:string, classes:string[], textSnippet:string, comment:string, url:string}>} */
   let annotations = [];
 
@@ -26,7 +48,8 @@
 
       const delBtn = document.createElement("button");
       delBtn.className = "fbp-item-delete";
-      delBtn.textContent = "✕";
+      delBtn.style.cssText += ";display:inline-flex;align-items:center;justify-content:center;";
+      delBtn.innerHTML = ICON_X;
       delBtn.addEventListener("click", () => {
         const removedCommentId = a.commentId;
         annotations.splice(i, 1);
@@ -92,10 +115,9 @@
     try {
       await navigator.clipboard.writeText(md);
       fallbackEl.style.display = "none";
-      const original = copyBtn.textContent;
-      copyBtn.textContent = "Copied ✓";
+      copyLabelNode.textContent = "Copied ✓";
       setTimeout(() => {
-        copyBtn.textContent = original;
+        copyLabelNode.textContent = "Copy";
       }, 1500);
     } catch (err) {
       fallbackEl.value = md;
