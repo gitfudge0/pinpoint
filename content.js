@@ -218,12 +218,13 @@
         left = Math.max(0, window.innerWidth - popupRect.width - 8);
       }
     } else {
-      top = rect.bottom + 8;
+      // Anchor at the element's top-right, matching where the pin will appear.
+      top = rect.top + 8;
       if (top + popupRect.height > window.innerHeight) {
-        top = rect.top - popupRect.height - 8;
-        if (top < 0) top = Math.max(0, window.innerHeight - popupRect.height - 8);
+        top = Math.max(0, window.innerHeight - popupRect.height - 8);
       }
-      left = rect.left;
+      left = rect.right - popupRect.width;
+      if (left < 0) left = 0;
       if (left + popupRect.width > window.innerWidth) {
         left = Math.max(0, window.innerWidth - popupRect.width - 8);
       }
