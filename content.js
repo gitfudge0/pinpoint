@@ -161,7 +161,7 @@
     return false; // absolute default: white page
   }
 
-  function showPopup(el, group) {
+  function showPopup(el, group, anchorRect) {
     ensurePopup();
     const rect = el.getBoundingClientRect();
     popup.classList.toggle("fbp-dark", isDarkContext(el));
@@ -188,14 +188,28 @@
 
     // Measure then position, flipping to stay in viewport.
     const popupRect = popup.getBoundingClientRect();
-    let top = rect.bottom + 8;
-    if (top + popupRect.height > window.innerHeight) {
-      top = rect.top - popupRect.height - 8;
-      if (top < 0) top = Math.max(0, window.innerHeight - popupRect.height - 8);
-    }
-    let left = rect.left;
-    if (left + popupRect.width > window.innerWidth) {
-      left = Math.max(0, window.innerWidth - popupRect.width - 8);
+    let top, left;
+    if (anchorRect) {
+      top = anchorRect.bottom + 8;
+      left = anchorRect.right - popupRect.width;
+      if (top + popupRect.height > window.innerHeight) {
+        top = anchorRect.top - popupRect.height - 8;
+        if (top < 0) top = Math.max(0, window.innerHeight - popupRect.height - 8);
+      }
+      if (left < 0) left = 0;
+      if (left + popupRect.width > window.innerWidth) {
+        left = Math.max(0, window.innerWidth - popupRect.width - 8);
+      }
+    } else {
+      top = rect.bottom + 8;
+      if (top + popupRect.height > window.innerHeight) {
+        top = rect.top - popupRect.height - 8;
+        if (top < 0) top = Math.max(0, window.innerHeight - popupRect.height - 8);
+      }
+      left = rect.left;
+      if (left + popupRect.width > window.innerWidth) {
+        left = Math.max(0, window.innerWidth - popupRect.width - 8);
+      }
     }
     popup.style.top = `${top}px`;
     popup.style.left = `${left}px`;
@@ -306,25 +320,21 @@
       positionOverlay(group.el);
       setTimeout(() => hideOverlay(), 1000);
       frozen = group.el;
-      showPopup(group.el, group);
+      showPopup(group.el, group, group.pinEl.getBoundingClientRect());
     });
     return pinEl;
   }
 
   function renderPinContent(pinEl, group) {
     if (!pinEl) return;
-    if (group.comments.length > 1) {
-      pinEl.textContent = String(group.comments.length);
-    } else {
-      pinEl.textContent = "💬";
-    }
+    pinEl.textContent = String(group.comments.length);
   }
 
   function positionPin(group) {
     if (!group.pinEl) return;
     const rect = group.el.getBoundingClientRect();
-    group.pinEl.style.left = `${rect.right + window.scrollX - 11}px`;
-    group.pinEl.style.top = `${rect.top + window.scrollY - 11}px`;
+    group.pinEl.style.left = `${rect.right + window.scrollX - 14}px`;
+    group.pinEl.style.top = `${rect.top + window.scrollY - 14}px`;
   }
 
   function repositionAllPins() {
