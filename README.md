@@ -8,6 +8,7 @@
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](#installation)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-34A853)](manifest.json)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
 [Installation](#installation) · [Usage](#usage) · [Features](#features) · [Contributing](#contributing)
@@ -90,6 +91,10 @@ Issues and PRs welcome. Keep it dependency-free — that's the whole point.
 2. Create a branch (`git checkout -b fix/blurry-pins`)
 3. Load unpacked and test in Chrome
 4. Open a PR
+
+## License
+
+[MIT](LICENSE)
 
 ---
 
