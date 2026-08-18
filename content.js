@@ -13,6 +13,9 @@
   let overlay = null;
   let label = null;
   let popup = null;
+  let nextCommentId = 1;
+  let groups = []; // { el, comments: [{id, comment}], pinEl }
+  let pinContainer = null;
 
   function ensureOverlay() {
     if (overlay) return;
@@ -132,11 +135,56 @@
     return text.slice(0, 80);
   }
 
-  function showPopup(el) {
+  function shortLabel(el) {
+    const { tag, classes } = describe(el);
+    return classes.length ? `${tag}.${classes[0]}` : tag;
+  }
+
+  // Walk up from `el` looking for the first non-transparent computed
+  // background-color; return true when that color is dark.
+  function isDarkContext(el) {
+    const candidates = [];
+    for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+      candidates.push(node);
+    }
+    candidates.push(document.body, document.documentElement);
+    for (const node of candidates) {
+      if (!node) continue;
+      const bg = getComputedStyle(node).backgroundColor || "";
+      const m = bg.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
+      if (!m) continue;
+      const alpha = m[4] === undefined ? 1 : parseFloat(m[4]);
+      if (!(alpha > 0)) continue;
+      const r = parseFloat(m[1]), g = parseFloat(m[2]), b = parseFloat(m[3]);
+      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+    }
+    return false; // absolute default: white page
+  }
+
+  function showPopup(el, group) {
     ensurePopup();
     const rect = el.getBoundingClientRect();
+    popup.classList.toggle("fbp-dark", isDarkContext(el));
+    const header = popup.querySelector(".fbp-header");
+    if (header) header.textContent = shortLabel(el);
     popup.style.display = "block";
     popup.querySelector("textarea").value = "";
+
+    const history = popup.querySelector(".fbp-history");
+    if (history) {
+      history.innerHTML = "";
+      if (group) {
+        group.comments.forEach((c, i) => {
+          const item = document.createElement("div");
+          item.className = "fbp-history-item";
+          item.textContent = `${i + 1}. ${c.comment}`;
+          history.appendChild(item);
+        });
+        history.classList.add("fbp-visible");
+      } else {
+        history.classList.remove("fbp-visible");
+      }
+    }
 
     // Measure then position, flipping to stay in viewport.
     const popupRect = popup.getBoundingClientRect();
@@ -164,6 +212,8 @@
     popup = document.createElement("div");
     popup.className = "fbp-popup";
     popup.innerHTML = `
+      <div class="fbp-header"></div>
+      <div class="fbp-history"></div>
       <textarea class="fbp-textarea" placeholder="Comment..."></textarea>
       <div class="fbp-popup-actions">
         <button type="button" class="fbp-btn fbp-btn-cancel">Cancel</button>
@@ -200,10 +250,12 @@
     if (!frozen) return;
     const comment = popup.querySelector("textarea").value.trim();
     const { tag, id, classes } = describe(frozen);
+    const commentId = nextCommentId++;
     chrome.runtime
       .sendMessage({
         type: "annotation",
         data: {
+          commentId: commentId,
           selector: selectorFor(frozen),
           tag,
           id,
@@ -214,7 +266,71 @@
         },
       })
       .catch(() => {});
+
+    let group = findGroup(frozen);
+    if (!group) {
+      group = { el: frozen, comments: [], pinEl: null };
+      groups.push(group);
+      group.pinEl = createPin(group);
+    }
+    group.comments.push({ id: commentId, comment });
+    renderPinContent(group.pinEl, group);
+    positionPin(group);
+
     cancelPopup();
+  }
+
+  function findGroup(el) {
+    for (const g of groups) {
+      if (g.el === el) return g;
+    }
+    return null;
+  }
+
+  function ensurePinContainer() {
+    if (pinContainer) return pinContainer;
+    pinContainer = document.createElement("div");
+    pinContainer.className = "fbp-pin-container";
+    document.documentElement.appendChild(pinContainer);
+    return pinContainer;
+  }
+
+  function createPin(group) {
+    ensurePinContainer();
+    const pinEl = document.createElement("div");
+    pinEl.className = "fbp-pin";
+    pinContainer.appendChild(pinEl);
+    pinEl.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      positionOverlay(group.el);
+      setTimeout(() => hideOverlay(), 1000);
+      frozen = group.el;
+      showPopup(group.el, group);
+    });
+    return pinEl;
+  }
+
+  function renderPinContent(pinEl, group) {
+    if (!pinEl) return;
+    if (group.comments.length > 1) {
+      pinEl.textContent = String(group.comments.length);
+    } else {
+      pinEl.textContent = "💬";
+    }
+  }
+
+  function positionPin(group) {
+    if (!group.pinEl) return;
+    const rect = group.el.getBoundingClientRect();
+    group.pinEl.style.left = `${rect.right + window.scrollX - 11}px`;
+    group.pinEl.style.top = `${rect.top + window.scrollY - 11}px`;
+  }
+
+  function repositionAllPins() {
+    for (const g of groups) {
+      if (g.pinEl) positionPin(g);
+    }
   }
 
   function cancelPopup() {
@@ -248,6 +364,7 @@
   }
 
   function startPicking() {
+    if (picking) return;
     picking = true;
     ensureOverlay();
     document.addEventListener("mousemove", onMouseMove, true);
@@ -274,8 +391,39 @@
       startPicking();
     } else if (msg && msg.type === "stop-picking") {
       stopPicking();
+    } else if (msg && msg.type === "remove-comment") {
+      for (const group of groups) {
+        const idx = group.comments.findIndex((c) => c.id === msg.id);
+        if (idx === -1) continue;
+        group.comments.splice(idx, 1);
+        if (group.comments.length === 0) {
+          const gIdx = groups.indexOf(group);
+          if (gIdx !== -1) groups.splice(gIdx, 1);
+          if (group.pinEl && group.pinEl.parentNode) {
+            group.pinEl.parentNode.removeChild(group.pinEl);
+          }
+          if (frozen === group.el && popup && popup.style.display !== "none") {
+            cancelPopup();
+          }
+        } else {
+          renderPinContent(group.pinEl, group);
+        }
+        break;
+      }
+    } else if (msg && msg.type === "clear-annotations") {
+      for (const group of groups) {
+        if (group.pinEl && group.pinEl.parentNode) {
+          group.pinEl.parentNode.removeChild(group.pinEl);
+        }
+      }
+      groups = [];
+      if (popup && popup.style.display !== "none") {
+        cancelPopup();
+      }
     }
   });
+
+  window.addEventListener("resize", repositionAllPins);
 
   window.__fbpStartPicking = startPicking;
 })();

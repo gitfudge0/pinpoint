@@ -92,3 +92,21 @@ actionable. No test framework for a 5-file extension.
 
 Persistence, sharing/export formats, iframe support, screenshots per
 annotation, editing a saved comment (delete + re-add instead).
+
+## On-page pins (v1.1)
+
+Saved comments now render a coral pin (~22px circle, #D97757) at the top-right
+corner of their element, grouped by element reference — a second pick on the
+same element joins the existing group and the pin shows a count instead of a
+💬 glyph. Pins live in a single `document.documentElement`-appended container
+(pointer-events:none, children pointer-events:auto) and are positioned in
+document coordinates, so they scroll naturally and are clickable regardless
+of picker mode. Clicking a pin briefly flashes the element's highlight
+overlay and reopens the comment popup in **history mode**: a scrollable list
+of that element's prior comments above the textarea, which still appends a
+new comment on Save. Each comment gets a unique `commentId` from content.js
+(kept separate from the element's own `id` field to avoid a naming clash).
+The side panel's delete and "Clear all" now sync back to the page via
+`chrome.tabs.sendMessage` (`remove-comment` / `clear-annotations`), swallowing
+failures so a stale/navigated tab never blocks the panel's own list.
+Everything stays ephemeral — no storage, no re-attachment after navigation.

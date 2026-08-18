@@ -28,8 +28,16 @@
       delBtn.className = "fbp-item-delete";
       delBtn.textContent = "✕";
       delBtn.addEventListener("click", () => {
+        const removedCommentId = a.commentId;
         annotations.splice(i, 1);
         render();
+        if (removedCommentId !== undefined) {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const tab = tabs && tabs[0];
+            if (!tab || tab.id == null) return;
+            chrome.tabs.sendMessage(tab.id, { type: "remove-comment", id: removedCommentId }).catch(() => {});
+          });
+        }
       });
 
       head.appendChild(labelSpan);
@@ -68,7 +76,7 @@
 
   function buildMarkdown() {
     const url = annotations.length ? annotations[0].url : location.href;
-    const date = new Date().toISOString().slice(0, 10);
+    const date = new Date().toLocaleDateString("en-CA"); // local YYYY-MM-DD
     let md = `## UI Feedback — ${url} (${date})\n`;
     annotations.forEach((a, i) => {
       md += `\n### ${i + 1}. ${markdownItemHead(a)}\n`;
@@ -98,6 +106,11 @@
   clearBtn.addEventListener("click", () => {
     annotations = [];
     render();
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (!tab || tab.id == null) return;
+      chrome.tabs.sendMessage(tab.id, { type: "clear-annotations" }).catch(() => {});
+    });
   });
 
   chrome.runtime.onMessage.addListener((msg) => {
