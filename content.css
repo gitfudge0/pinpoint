@@ -249,13 +249,21 @@
 /* ---- Pins ---------------------------------------------------------------- */
 
 .fbp-pin-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 0;
   height: 0;
   pointer-events: none;
   z-index: 2147483646;
+  /* The UA [popover] rules apply once we promote this to the top layer:
+     overflow:auto would clip every pin out of the 0x0 box, and the default
+     border/padding/background would paint a stray chip. */
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .fbp-pin {

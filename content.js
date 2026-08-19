@@ -79,6 +79,19 @@
     try { el.hidePopover(); } catch {}
   }
 
+  // An open modal <dialog> makes everything outside its subtree inert,
+  // so focus()/clicks on a popup parented to <html> silently no-op.
+  // Find the topmost open modal dialog to host the popup instead.
+  function modalHost() {
+    const dialogs = document.querySelectorAll("dialog");
+    for (let i = dialogs.length - 1; i >= 0; i--) {
+      try {
+        if (dialogs[i].matches(":modal")) return dialogs[i];
+      } catch {}
+    }
+    return document.documentElement;
+  }
+
   function positionOverlay(el) {
     ensureOverlay();
     const rect = el.getBoundingClientRect();
@@ -232,6 +245,8 @@
     popup.classList.toggle("fbp-dark", isDark);
     const header = popup.querySelector(".fbp-header");
     if (header) header.textContent = shortLabel(el);
+    const host = modalHost();
+    if (popup.parentNode !== host) host.appendChild(popup);
     popup.style.display = "block";
     topLayer(popup);
     popup.querySelector("textarea").value = "";
@@ -287,6 +302,10 @@
   function hidePopup() {
     if (popup) popup.style.display = "none";
     unTopLayer(popup);
+    // Don't leave the popup stranded inside a dialog the page may remove.
+    if (popup && popup.parentNode !== document.documentElement) {
+      document.documentElement.appendChild(popup);
+    }
   }
 
   function ensurePopup() {
@@ -390,7 +409,18 @@
     pinContainer.className = "fbp-pin-container";
     document.documentElement.appendChild(pinContainer);
     pinContainer.style.setProperty("--fbp-accent", pinColor);
+    hostPinContainer();
     return pinContainer;
+  }
+
+  // Re-parent the pin container into the open modal dialog (if any) so pins
+  // aren't inert, and re-promote it to the top layer so it paints above the
+  // dialog too — same reasoning as modalHost()/topLayer() above for the popup.
+  function hostPinContainer() {
+    if (!pinContainer) return;
+    const host = modalHost();
+    if (pinContainer.parentNode !== host) host.appendChild(pinContainer);
+    topLayer(pinContainer);
   }
 
   function createPin(group) {
@@ -418,14 +448,17 @@
     pinEl.innerHTML = html;
   }
 
+  // Container is top-layer, so its containing block is the viewport —
+  // position against getBoundingClientRect() directly, no scroll offsets.
   function positionPin(group) {
     if (!group.pinEl) return;
     const rect = group.el.getBoundingClientRect();
-    group.pinEl.style.left = `${rect.right + window.scrollX - 14}px`;
-    group.pinEl.style.top = `${rect.top + window.scrollY - 14}px`;
+    group.pinEl.style.left = `${rect.right - 14}px`;
+    group.pinEl.style.top = `${rect.top - 14}px`;
   }
 
   function repositionAllPins() {
+    hostPinContainer();
     for (const g of groups) {
       if (g.pinEl) positionPin(g);
     }
@@ -530,6 +563,7 @@
   });
 
   window.addEventListener("resize", repositionAllPins);
+  window.addEventListener("scroll", repositionAllPins, { capture: true, passive: true });
 
   window.__fbpStartPicking = startPicking;
 })();
