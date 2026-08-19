@@ -1,0 +1,26 @@
+{
+  "name": "pinpoint",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome extension for pinning comments to page elements and copying structured feedback.",
+  "license": "MIT",
+  "scripts": {
+    "build": "sh scripts/build.sh",
+    "dev": "sh scripts/build.sh --dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:network": "sh scripts/check-network.sh",
+    "check": "npm run typecheck && npm run test && npm run build && npm run check:network"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/chrome": "^0.2.6",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}
