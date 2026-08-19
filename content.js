@@ -1,9 +1,24 @@
 (() => {
-  if (window.__fbpInjected) {
-    // Already injected — just (re)start picking mode.
+  // A stale instance's chrome.runtime handle dies on extension reload, so
+  // accessing it can itself throw — treat that as "not alive".
+  function contextAlive() {
+    try { return !!(chrome.runtime && chrome.runtime.id); } catch { return false; }
+  }
+
+  if (window.__fbpInjected && contextAlive()) {
+    // Live instance already present — just (re)start picking mode.
     window.__fbpStartPicking && window.__fbpStartPicking();
     return;
   }
+
+  if (window.__fbpInjected) {
+    // Stale instance from a previous extension load is squatting the page.
+    try { window.__fbpTeardown && window.__fbpTeardown(); } catch {}
+    document
+      .querySelectorAll(".fbp-overlay, .fbp-label, .fbp-popup, .fbp-pin-container")
+      .forEach((el) => el.remove());
+  }
+
   window.__fbpInjected = true;
 
   function injectFontFace() {
@@ -232,12 +247,13 @@
     }
   });
 
-  darkMedia.addEventListener("change", () => {
+  function onDarkMediaChange() {
     if (currentTheme === "system") {
       isDark = computeIsDark();
       applyThemeToPopup();
     }
-  });
+  }
+  darkMedia.addEventListener("change", onDarkMediaChange);
 
   function showPopup(el, group, anchorRect) {
     ensurePopup();
@@ -347,15 +363,16 @@
     });
     popup.addEventListener("click", (e) => e.stopPropagation());
 
-    function onOutsideClick(e) {
-      if (!frozen || !popup || popup.style.display === "none") return;
-      if (e === openClickEvent) return;
-      if (popup.contains(e.target)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      cancelPopup();
-    }
     document.addEventListener("click", onOutsideClick, true);
+  }
+
+  function onOutsideClick(e) {
+    if (!frozen || !popup || popup.style.display === "none") return;
+    if (e === openClickEvent) return;
+    if (popup.contains(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelPopup();
   }
 
   function saveAnnotation() {
@@ -372,26 +389,31 @@
       positionPin(group);
     }
 
-    chrome.runtime
-      .sendMessage({
-        type: "annotation",
-        data: {
-          commentId: commentId,
-          groupId: group.groupId,
-          selector: selectorFor(frozen),
-          tag,
-          id,
-          classes,
-          textSnippet: textSnippet(frozen),
-          comment,
-          url: location.href,
-        },
-      })
-      .catch(() => {});
-
     group.comments.push({ id: commentId, comment });
     renderPinContent(group.pinEl, group);
     positionPin(group);
+
+    // Record locally first: after an extension reload the old content script
+    // survives in the page with a dead chrome.runtime, and sendMessage then
+    // throws synchronously rather than rejecting, so .catch() never runs.
+    try {
+      chrome.runtime
+        .sendMessage({
+          type: "annotation",
+          data: {
+            commentId: commentId,
+            groupId: group.groupId,
+            selector: selectorFor(frozen),
+            tag,
+            id,
+            classes,
+            textSnippet: textSnippet(frozen),
+            comment,
+            url: location.href,
+          },
+        })
+        .catch(() => {});
+    } catch {}
 
     showPopup(frozen, group, group.pinEl.getBoundingClientRect());
   }
@@ -565,5 +587,37 @@
   window.addEventListener("resize", repositionAllPins);
   window.addEventListener("scroll", repositionAllPins, { capture: true, passive: true });
 
+  // Unwind this instance so a fresh injection can take over cleanly. Never
+  // calls stopPicking() — that ends in a sendMessage() that throws
+  // synchronously once this instance's chrome.runtime is dead.
+  function teardown() {
+    try {
+      picking = false;
+      hovered = null;
+      frozen = null;
+      document.removeEventListener("mousemove", onMouseMove, true);
+      document.removeEventListener("wheel", onWheel, { capture: true });
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("click", onOutsideClick, true);
+      window.removeEventListener("resize", repositionAllPins);
+      window.removeEventListener("scroll", repositionAllPins, { capture: true });
+      darkMedia.removeEventListener("change", onDarkMediaChange);
+
+      for (const el of [overlay, label, popup, pinContainer]) {
+        if (!el) continue;
+        unTopLayer(el);
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }
+      const fontStyle = document.getElementById("__fbp-font-face");
+      if (fontStyle && fontStyle.parentNode) fontStyle.parentNode.removeChild(fontStyle);
+
+      window.__fbpInjected = false;
+      window.__fbpStartPicking = null;
+      window.__fbpTeardown = null;
+    } catch {}
+  }
+
   window.__fbpStartPicking = startPicking;
+  window.__fbpTeardown = teardown;
 })();
