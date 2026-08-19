@@ -1,6 +1,6 @@
 {
   "name": "pinpoint",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Chrome extension for pinning comments to page elements and copying structured feedback.",

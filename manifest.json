@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pinpoint",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pinpoint — annotate elements on a page with comments and copy structured markdown feedback.",
   "permissions": ["sidePanel", "activeTab", "scripting", "storage"],
   "web_accessible_resources": [{"resources": ["fonts/inter-var.woff2"], "matches": ["<all_urls>"]}],
