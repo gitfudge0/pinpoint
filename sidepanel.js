@@ -214,16 +214,12 @@
   function elementLabel(a) {
     let s = a.tag;
     if (a.id) s += `#${a.id}`;
-    if (a.classes && a.classes.length) s += "." + a.classes.join(".");
     return s;
   }
 
   function markdownItemHead(a) {
-    let attrs = "";
-    if (a.id) attrs += ` id="${a.id}"`;
-    if (a.classes && a.classes.length) attrs += ` class="${a.classes.join(" ")}"`;
     const text = settings.includeText ? ` "${a.textSnippet}"` : "";
-    return `<${a.tag}${attrs}>${text}`;
+    return `${elementLabel(a)}${text}`;
   }
 
   function buildMarkdown() {
@@ -233,7 +229,6 @@
     groups.forEach((g, i) => {
       md += `\n### ${i + 1}. ${markdownItemHead(g)}\n`;
       if (settings.includeSelector) md += `- Selector: ${g.selector}\n`;
-      if (settings.includeText) md += `- Text: "${g.textSnippet}"\n`;
       md += `- Comments:\n`;
       g.comments.forEach((c, j) => {
         md += `  ${j + 1}. ${c.comment}\n`;
@@ -250,7 +245,6 @@
       const text = settings.includeText ? ` "${g.textSnippet}"` : "";
       out += `\n${i + 1}. ${elementLabel(g)}${text}\n`;
       if (settings.includeSelector) out += `  Selector: ${g.selector}\n`;
-      if (settings.includeText) out += `  Text: "${g.textSnippet}"\n`;
       out += `  Comments:\n`;
       g.comments.forEach((c, j) => {
         out += `    ${j + 1}. ${c.comment}\n`;
@@ -263,7 +257,7 @@
     const url = groups.length ? groups[0].url : location.href;
     const date = new Date().toLocaleDateString("en-CA");
     const items = groups.map((g) => {
-      const item = { tag: g.tag, id: g.id, classes: g.classes };
+      const item = { tag: g.tag, id: g.id };
       if (settings.includeSelector) item.selector = g.selector;
       if (settings.includeText) item.text = g.textSnippet;
       item.comments = g.comments.map((c) => c.comment);
